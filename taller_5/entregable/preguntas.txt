@@ -1,0 +1,222 @@
+Pregunta 1:
+Modo Real:
+. Trabaja por defecto en 16 bits
+. Podemos direccionar hasta 1MB de mem
+. Los modos de direccionamiento son mas limitados que en modo protegido
+. No hay proteccion de memoria ni niveles de privilegio
+. No soporta memoria virtual
+. No contempla LDT y GDT
+. Solo utiliza Segmentacion
+. Todo procesador inicia en este modo (RESET)
+
+Modo Protegido:
+. Memoria dispo. 4GB
+. Soporta hasta 4 niveles de proteccion
+. Puede trabajar con 32 o 64 bits
+. Set de instrucciones depende del nivel de privilegio
+. Se activa con PE = 1
+. Requiere haber previamente inicializado y configurado GDT y LDT (esta ultima opcional)
+. PA Permite paginacion
+
+Pregunta 2:
+Por herencia de Intel y su maldita compatibilidad debemos iniciar como si estuviesemos utilizando un 8086.
+Podrias tener un SO en modo real directamente, pero estaria limitado a las spec del 8086 con sus 
+limitaciones respectivas (ejercicio 1).
+
+Pregunta 3: 
+Es una tabla que almacena el espacio dedicado a los Descriptores de Segmentos a nivel global. 
+Esta es unica y se define a partir del GDTR (start y size)
+
+*Limite. El Limite de un segmento especifica el maximo offset que
+puede tener un byte direccionable dentro del segmento. Suele
+confundirse este concepto con el tamano del segmento. En realidad el
+Limite es el tamano del segmento menos 1, ya que el offset del primer
+byte del segmento es 0. 
+
+*Direccion Base. Es la direccion a partir de la cual se despliega en
+forma continua el segmento.
+
+*G. Granularity. Establece la unidad de medida del campo Limite.
+Si G = 0, el maximo offset de un byte es igual a Limite. Si G = 1,
+el maximo offset es igual a (Limite * 0x1000)+0xFFF.
+
+
+*DPL. Descriptor Priviledge Level. Nivel de privilegio que debe
+tener el segmento que contiene el codigo que pretende acceder a
+este segmento.
+
+
+*S. System. Este bit, activo bajo permite administrar en las tablas
+de descriptores, dos clases bien determinadas de segmentos:
+	1. Segmentos de Codigo o Datos
+	2. Segmentos de Sistema. Tienen diferentes formatos y en general no
+	 se refieren a zonas de memoria (salvo TSS). En general se refieren
+	 a mecanismos de uso de recursos del procesador por parte del
+	 kernel (por ello reciben el nombre de descriptores de Sistema, ya
+	 que son para uso exclusivo del Sistema Operativo)
+
+
+*P. Present. Cuando es '1' el segmento correspondiente esta
+presente en la memoria RAM. Si es '0', el segmento esta en la
+memoria virtual (disco). Un acceso a un segmento cuyo bit P esta
+en '0', genera una excepcion #NP (Segmento No Presente). Esto
+permite al kernel solucionar el problema, efectuando el “swap”
+entre el disco a memoria para ponerlo accesible en RAM.
+
+
+Ejercicio 4:
+   1    0  1  0
+  11   ,10,9, 8
+(Code)  C  R  A  (Execute / Read)
+
+Aclaracion Ej 5:
+Al activar G, el Seg Limit esta intepretado como valores de 4 Kb (ref: pag 101 vol 3)
+(2^20 × 817) ÷ 4096  - 1
+817 MiB / 4Kb  - 1
+
+Ejercicio 6:
+GDT_DESC = gdtr
+gdt[] = struct de un segmento gdt (define los segment descriptor)
+
+Ejercicio 10:
+Toma como parametro el puntero al struct GDT y lo carga en un GDTR. Esta guardado en gdt.h,
+mas especificamente en el struct str_gdt_descriptor. 
+Se inicializa en gdt.c de la siguiente manera: gdt_descriptor_t GDT_DESC = {sizeof(gdt) - 1, (uint32_t)&gdt};
+
+Ejercicio 21:
+Utiliza una matriz donde toma un puntero como fila (el primer elemento de la matriz) y como columna utiliza un define de las 80 celdas que se le permiten utilizar. Arma como una cajita
+La estructura esta definida como 2 bytes, uno que representa el caracter en si y otro que representa sus atributos.
+
+
+Taller Interrupciones
+
+Ejercicio 1
+El descriptor de la tabla IDT posee los campos offset los cuales se completan
+con la direccion de memoria _isr (numero de la excepcion).
+Luego posee el selector de segmento de la GDT que seram siempre de codigo
+El campo type: define si es Task, Trap o Interrupt gate. Y ademas si es de 
+32 o 16 bits. si es de 
+32 o 16 bits.
+Finalmente tenemos dpl (privilege level) y P (present)
+
+Taller paginacion
+Ejercicio 1
+a) 2 niveles de privilegio: Supervisor y User
+b) Direccion logica = Segemento : offset
+	Pasa al modulo de segmentacion 
+		Con el segmento de la direccion logica, lo usa de indice para la gdt
+		Con la entrada que realizo a la gdt consigue la Base y a esta ultima le suma el Offset de la logica
+		Y ahi obtenes la Direccion virtual
+	Direccion virtual = Page idx Directory : Page Table idx : Offset
+	Uso el CR3 para obtener el inicio de la directory de las paginas
+		Miro los 10 bits mas significativos para conseguir los 20 bits que indican donde inicia la tabla de la pagina que buscso
+			Con los siguientes 10 bits obtengo la entrada de la pagina que tiene la direccion objetivo
+				Y con los ultimos 12 bits, obtengo le sumo a la entrada el Offset correspondiente obteniendo la direccion fisica
+c) 	D : Dirty, indica si la pagina fue escrita
+	A : Accessed, indica si la pagina fue escrita o leida
+	PCD: Cache disabled, evita que cache la pagina en cuestion
+	PWT: write through, hace que se actualice no solo el cache en la escritura sino que tambien en la memoria. En caso contrario solo se actualizara cuando se libere el cache
+	U/S: Inidica nivel privilegio de la pagina
+	R/W: Leer y escribir o read only
+	P : Present, levanta page fault
+
+d) Siempre prevalece el bit 0 en lo que privilegio compete. Si el CR0.WP = 1, entonces el acceso se determina por el R/W (prevalece Read Only)
+En caso contrario prevalece Read-write
+
+e) Hay que pedir 1 al directorio, 1 a la tabla de pagina y 3 paginas (2 codigo y 1 stack)
+
+g) TLB : Una porcion de memoria que facilita y agiliza las traduccion de direcciones logicas a fisicas
+	Es necesario purgarlo (CR3 cambio) pq si te interesa trabajar con otra pagina la TLB necesita ser actualizada, o pq se llena y necesitas limpiar esta "Cache"
+	Los atributos de la TLB son: los bits de la direccion lineal que se utilizan al acceder al DTP y a la PT, y los bits de direccion fisica contenidos
+	en el descriptor de la pagina direccionada.
+	Luego tiene bits de control que por lo general son los atributos de la pagina seleccionada
+	Si se ve afectada si la pagina esta Dirty o accessed ya que en la tabla real no se vio reflejado aun el cambio de estado.
+	
+Taller Tareas
+
+1. Para ejecutar dos tareas se requieren utilizar el task register con el fin seleccionar el descriptor
+de la TSS en la GDT. Dos tablas de TSS para guardar las instancias de las dos tareas y una tercera para
+la inicial, y opcional una idle (por si las dos terminan). El formato del task register son 16 bits visibles 
+y 32 bits ocultos. El descriptor del GDT (ver manual).
+Fotitos TSS y TSS en GDT 
+
+2. El cambio de contexto es el mecanismo utilizado para dar el efecto de multitasking en mono core. 
+Consiste en guardar una imagen del cpu del contexto de una tarea en memoria para luego recuperarla.
+Luego de almacenarla se procede a cargar los registros de la siguiente tarea que dicten el scheduler (task switch).
+En la TSS se almacenaran los registro de proposito general, eflags, cr3, stacks, etc.
+TR: es el registro encargado de orquestar el cambio de tarea a partir de contener el selector de
+la entrada de la GDT que contiene el TSS descriptor.
+Al cargar se obtiene el EIP y CR3(paginacion) de la tarea a ejecutar.
+El TR se vera definido al realizar ltr
+
+3. En el caso del primer cambio de contexto, debemos tener definido las entradas de la GDT y las TSS de la 
+tarea inicial, y de aquellas deseadas a ejecutar. En esta primera tarea inicial se debera cargar manualmente
+el TR con codigo de kernel. Cuando ocurra que ninguna tarea quede por ejecutar, podemos configurar una tarea
+idle, con el objetivo de perder la inercia creada con la tarea inicial, y no necesitar reinicializar la estructuras.
+
+4. El scheduler establece las prioridades para determinar cuantas unidades de tiempo tienen a disposicion cada tarea
+y ademas algun tipo de politica para determinar la secuencia de tareas. Las politicas son algoritmos de distribucion
+de tiempo por ejemplo, round robin. En nuestro caso, utilizamos los clicks del clocks para establecemer una metrica.
+
+5. Visto antes
+
+
+
+11. 
+a)
+sched_task_offset: dd 0xFFFFFFFF
+sched_task_selector: dw 0xFFFF
+
+-> Define de manera secuencial en memoria las etiquetas de offset y selector para cuando realice el JMP far [offset]
+por little endian leera primero el [sched_task_selector: dw 0xFFFF]
+
+global _isr32
+_isr32:
+pushad     ->  pushea todos los registros de proposito general como cuando se resuelve una Interrupcion
+call pic_finish1  ->  Al ser una interrupcion de I/O se utiliza esta funcion para avisar al pic que fue antendida
+call sched_next_task  -> invoca al siguiente task elegida por el sched 
+str cx     -> Lee el Tr
+cmp ax, cx   -> Compara el TR con el de la siguiente tarea 
+je .fin     -> Si son iguales salta al final para no entrar en un #GP al intentar haceer un cambio de tarea de forma recursiva
+mov word [sched_task_selector], ax    -> Almacena en la direccion de ched_task_selector el tr de la siguiente tarea
+jmp far [sched_task_offset]   -> Salta a es direccion a buscar 16 bits de selector : 32 bits de offset
+.fin:
+popad     -> popea los registros que pusheo anteriormente
+iret    -> continua los procesos
+
+b) El offset no tiene ningun efecto ya que al saltar al tss se seguira la ejecucion a EIP que tenga almacenado
+
+c) Al lugar que tenga almacenado en su TSS (regresaria al jump donde fue freezeado para el task switch
+ y luego aumenta el eip para el pushad)
+. Si la tarea se acaba de iniciar sera la primera linea de codigo de la tarea 
+
+12)
+    Realiza un ciclo de 1 a 3 y luego vuelve a 0 hasta que pase 1 de 2 opciones:
+        Encuentra una tarea ejecutable (No Busy?) a la que pueda realizar el cambio de tarea 
+        O
+        No encuentra tarea ejecutable y realiza un cambio de tarea a idle
+
+14)
+a) Le pasa por parametro la direccion de la tss para ser agregado
+a la gdt como selector
+
+b) Pq gdt_index es un indice y lo lleva a direccion multiplicando por 8
+para usarlo de selector
+
+15)
+a) Utiliza 2 cosas:
+    Syscalls para enviarle señales al kernel que necesita ser resuelts con nivel de prioridad 0 (escribir en pantalla)
+    La memoria compartida (ENVIROMENT) que consiste en un struct que le permite saber a la tarea el estado general 
+    del SO en un determinado momento, contiene el estado de los perfiericos (keyboard), la tarea ejecutandose y la cantidad
+    de ticks de reloj para interpretar al clock
+
+b) Al intentar usar el .data saltaria un page fault ya que no tienen inicializado en sus pagians correspondiente una
+pagina de datos distinta al stack
+
+
+16)
+a) Pq la tarea no tiene fin
+b) Lo que deberíamos hacer es tener una syscall que nos permita avisar el fin de nuestra ejecución al sistema.
+
+
+18) Añadiendo handler de las excepeciones para que mate la tarea q la disparo quitandole el atributo "Runnable"

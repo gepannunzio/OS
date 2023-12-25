@@ -1,0 +1,33 @@
+Ejercicio 1
+a) Un contrato entre programadores para decidir como funciona o caracteriza la llamada de funciones y define todos los aspectos a nivel binario como los lenguajes se van a comunicar: El uso del stack, registros, alineacion, etc. Esto depende del SO, CPU y Biclioteca.
+
+Abi en System V, esta definida para Linux en 2 convenciones de llamada: Uno para 64 bits, que utiliza los registros de propósito
+general y la pila.
+
+Otro para 32 bits, que sólo utiliza la pila.
+
+b) En C: Compilador
+   En Assembly: Programador
+   
+c) El stack es el area que se encuetra entre los parametros recibidos y el tamaño de pila actual (rsp)
+
+	Prologo: Son los preparativos donde se alinea el stack y se preparan los parametros en datos temporales
+	Epilogo: Se reestablecen los registros No volatiles, y se devuelve el stack al estado original
+	
+d) Se los almacena en los registros volatiles y en la pila, dado que son de facil reestablecimiento para mantener la convencion.
+
+e) A 16 bytes. Seria +8 bytes al tener que realizar el call y pushear el RIP
+
+f) . Al ya estar compilado, los cambios serian textuales a los cambios del struct. Los offset estarian mal. La convencion seguiria siendo igual
+
+   . Antes: RDI -> array *  RSI -> tamaño y ahora al reves
+   
+   . Al ya estar compildo, se reserva 16 bits en la memoria para el valor de retorno y ahora al recibir 64 no respeta la convencion. 
+   
+   . En este caso, se cambia un parametro a 64 bits, pero asumiendo trabajando con AMD-64, el registro RDI permite un dato de este tamaño
+   
+   . No cambia ya que por convencion los parametros tienen registros asignados segun su tipo y estos parametros son unicos en su tipo en esta funcion
+   
+No se puede garantizar su correcto funcionamiento
+
+Corregido por: Kevin

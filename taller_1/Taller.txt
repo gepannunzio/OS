@@ -1,0 +1,92 @@
+IA 64bits
+Ej 1:
+a)64 bits para el address de forma de poder acceder a cada direccion
+de las 2^64.
+b)8 bits para acceder a cada byte de la memoria (por convencion).
+c)8 registros de proposito general de 32 bits o 16 registros (de prop. gral)
+de 64 bits. Los de 32 bits comienzan con E y los de 64 bits con R y R8-16.
+d)El registro RIP contiene los 64bits de offset de la
+siguiente instruccion a ser ejectuda.
+e)Permite con este tamaño, el desplazamiento maximo en la memoria
+
+Ej 2:
+a)EFLAGS tiene 32 bits.Guarda el estado del programa 
+y flags de control que modifican el comportamiento del
+procesador. Se modifica de forma limitada solo a nivel
+de aplicacion.
+b)Flag Zero: posicion 6, si la instruccion (add,sub,etc.)
+determina por la ALU que el valor obtenido fue cero.
+  Flag Carry: pos 0, en base a ALU si ocurre carry o borrow 
+  Flag Interrupciones: pos 9, interrupciones mascarables.
+c)Son el mismo registro unicos 32bits(superiores) reservado.
+EFLAGS extiende a RFLAGS,con estos 32 bits.
+
+Ej3:
+a) Permite procedimientos, y subrutinas y pasaje de parametros.
+y guardar variables locales.
+b) Puede estar ubicada en cualquier seccion de la memoria
+a) El ESP es el registro que posee la direccion actual del
+'stack pointer' ESP tiene 32 bits a diferencia de SP de 16 bits.
+b) El stack base pointer (contenido EBP registro) es la base
+o inicio del stack definido, en general el procedimiento
+copia el contenido del ESP al EBP antes de pushear nada.
+c) Pushea el EIP al stack, de forma que al utilizar la instruccion
+CALL se pueda retornar con la instruccion RET.
+d) La instruccion RET realiza un pop del stack del E/RIP y los
+almacena en el EIP. Y continua la rutina. La funcion es volver
+al estado original. una forma comun de resetear el stack es
+igual es ESP al EBP (lo hace el programador)
+e) El procesador no requiere llamar a RET pero el programado
+debe asegurarse que el RIP este bien definido aputando a la
+direccion correcta (procedimiento de llamada)
+Se puede asegurar no cambiandolo.
+f) Dependiendo de un flag el tamaño del dato para el PUSH O POP
+sera 16 o 32 bits cuando esta en modo 32 bits. Y en modo 64 bits
+son siempre de 64 bits de ancho (aunque pueden accederse a porciones).
+g) Si pues es un registro de proposito general pero no seria buena practica.
+
+2) Set De Instruccion
+a) INC:
+ Recibe un operando, de tipo reg, qwordreg, memory, memory64
+Permite de 8 a 64 bits. Su funcion es incrementar en uno el
+operando destino. Preservando los flags. Un ejemplo:
+ inc edx
+b) SUB:
+ Recibe dos operandos, de tipo 
+  reg, imm
+  reg, reg
+  reg, mem
+  mem, imm
+  mem, reg
+Que los imm van a de 8 a 32 bits y 
+ Realiza resta de enteros haciendo extension en caso que el operando sea imm
+Activa de ser necesario los flags de carry,overflow y sign,etc.
+
+ sub eax, 0x13
+
+c) XOR: 
+ Recibe dos operando de tipo
+  reg, imm
+  reg, reg
+  reg, mem
+  mem, imm
+  mem, reg
+Realiza el XOR logico entre primer operando y segundo y almacena
+en el primer operando.
+Que los imm van a de 8 a 32 bits y registro y memoria pueden ser
+de 8 a 64 bits.
+
+ xor ebx, eax
+
+
+d) JE:
+ Toma un parametro, que sera el offset que suele ser una label
+en el asm. Puede ser de 8, 16 o 32 bits, codificado como
+un numero con signo.
+ Su funcion, es si el flag Zero esta prendido, suma el offset
+al EIP, generando el salto. 
+ JE 0x33
+ JE salto
+ salto:
+
+Correccion Guadalupe

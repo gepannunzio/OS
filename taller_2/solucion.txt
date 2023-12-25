@@ -1,0 +1,61 @@
+1.1 stack -- Segmento = Stack, Es una variable local
+    *stack -- Segmento = BSS, Variable global no inicializada
+    st1p -- Segmento = Stack, Variable local
+    stack->pop -- Segmento = Text Es una seccion de codigo
+
+b)  [---4 byte--] /name
+    [---4 byte--]
+    [---4 byte--]
+    [---4 byte--]
+    [1 byte][3 bytes] /name /padding
+    [---4 byte--] /dni
+    [--3 byte--][1 byte] /califications /padding
+    [--2 byte-][--2 byte--] /concept /padding
+Student_t 32bits
+
+[---8 bytes---]/name
+[---8 bytes---]
+[5 byte][3 bytes]
+[4 bytes][3 bytes][1 byte] /dni /cali /padd
+[2 bytes][6 bytes]  /concept /padding
+Student_t 64 bits
+
+  [---4 byte--] /name
+    [---4 byte--]
+    [---4 byte--]
+    [---4 byte--]
+    [1 byte][3 bytes] /name /dni 
+    [1 byte]/dni [--3 byte--] /califications
+    [--2 byte-] /concept
+Studentp_t 32bits
+
+[---8 bytes---]/name
+[---8 bytes---]
+[5 byte][3 bytes] /name /dni
+[1 byte][3 bytes][2 bytes] /dni /califications /concept
+Studenttp_t 64 bits
+
+
+
+c) teacher_t junto a lo que se encuentre en el heap
+
+
+1.2 a) _stackMem, toma forma del offset adaptandose al dato que se quiere almacenar en la pila
+
+b) 64 bits
+
+c) struct Stack: ebp(64 bits), esp(64 bits), _stackmem (64bits), pop(64 bits), top(64), push(64)
+   Stack: [                  ]
+           ^                ^
+     	   |                |
+        _stackmem         esp,esb
+
+CORRECTOR: Juani
+
+Ejercicio 3
+b) Aparece Steve Palmer pq es el ultimo elemento que se va a printear, por lo tanto es el primero que se pusheo, entrando como segundo parametro, por ser el rsi
+
+c) Se muestra la estructura del Stack: La direccion en la q se encuentran ebp y esp, que coinciden por el momento, _stackMem, el tamaño maximo permitido para el stack, pop, top y push son los punteros a memoria donde se encuentran las instrucciones
+
+CORRECTOR: Guadalupe
+
